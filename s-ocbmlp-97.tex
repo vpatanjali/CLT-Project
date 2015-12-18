@@ -37,13 +37,13 @@
     \item Proposes a new variant of multiclass \textsc{AdaBoost} i.e. \textsc{AdaBoost}.ECC and gives an analysis of its performance
     \end{itemize}
     In this review we tried to present as much background as possible on terminology and relevant results, especially on things we found confusing or difficult to follow in our first reading of the paper. As such, some sections might seem a bit lengthy or extraneous\\\\
-	Multiclass learning learns k classes where $k > 2$. But most well established algorithms are best suited for learning binary classification problems. This paper works on solving the problem of combining multiple binary class learners effectively to produce an efficient multiclass learner.
+	Multiclass learning is the task of classifying examples into k classes where $k > 2$. Most well established algorithms are best suited for learning binary classification problems. This paper presents some results on how to combine  multiple binary class learners effectively to produce an efficient multiclass learner.
 	
 \section{Concepts Used}
     \subsection{Error Correcting Codes}
         \bf Definition: \normalfont \textit {An (n,K,d) error-correcting code C is a set of K binary vectors of dimension n, called codewords, such that the Hamming distance between every pair of distinct codewords is at least d}.\\
         \bf Property: Code $C$ can correct at least $\lfloor \frac{d-1}{2} \rfloor$ errors. \normalfont\\
-        Since the distance between any two codewords is at least d, therefore we can imagine hamming balls of radius $\frac{d-1}{2}$ around each code word. Therefore if there is a difference of more then $\frac{d-1}{2}$ between 2 vectors then the vector could be closer to another codeword. In other words, any codeword can absorb at most  $\lfloor \frac{d-1}{2} \rfloor$ errors.\\
+        Since the distance between any two codewords is at least d, to make a given codeword closer to another than itself, we should invert at least half the difference, which is $\lfloor \frac{d-1}{2} \rfloor$. In other words, any codeword can absorb at most  $\lfloor \frac{d-1}{2} \rfloor$ errors.\\
 
     \subsection{Hadamard Matrix Codes}
         \bf Definition: \normalfont \textit{$\left\{ H_{n+1} \right\}$ of $(2^{n+1},2^{n+1},2^n)$ is a $2^{n+1}$ by $2^{n+1}$ matrix where all the codewords(as defined by each row or the columns) are at least $2^n$ Hamming distance apart.}\normalfont\\
@@ -68,15 +68,15 @@
                             1 & 1 \\       1 & -1       \end{array} } \right]
                     \]\\
                     It can be easily seen that the two codes thus produced are at a distance of 1 and satisfy the property
-                \item Assuming $H_n$ has all codewords at least $2^n-1$ distance apart we need to prove that $H_{n+1}$ has any two codewords x and y which are at least at a distance of $2^n$. Two conditions follow:
+                \item Assuming $H_n$ has all codewords at least $2^{n-1}$ distance apart we need to prove that $H_{n+1}$ has any two codewords x and y which are at least at a distance of $2^n$. Two conditions follow:
                     \begin{enumerate}
                         \item If x and y have first $2^n$ bits same then the last $2^n$ bits will definitely be different as ensured by the construction. Thus the codewords are at a distance of $2^n$.
-                        \item If the first $2^n$ bits are not same then they will be at least different at $2^n-1$ positions. Also the last $2^n$ positions which are same for x and negated for y, the hamming distance would again be at least $2^{n-1}$. Therefore any two such codewords also preserve the property. 
+                        \item If the first $2^n$ bits are not same then they will be at least different at $2^{n-1}$ positions. Also the last $2^n$ positions which are same for x and negated for y, the hamming distance would again be at least $2^{n-1}$. Therefore any two such codewords also preserve the property. 
                     \end{enumerate}
             \end{enumerate}
             \end{proof}
     \subsection{Colorings}
-        A coloring $\mu : Y \rightarrow \{-1, +1\}$ is a function mapping a set of binary vectors Y, typically the binary encoding of classes onto the set $\{-1,+1\}$.
+        A coloring $\mu : Y \rightarrow \{-1, +1\}$ is a function mapping a set of binary vectors Y onto the set $\{-1,+1\}$. This could for instance be one bit of the binary encoding of Y
     \subsection{Closest codeword decoding}
     Given a set of codes C and a string $x$ of length $n$, the closest codeword decoding of $x$ gives the code from C that has the smallest hamming distance to $x$.
     \subsection{Weighted closest codeword decoding}
@@ -87,29 +87,27 @@
     \item Multiclass classification problem with m examples $x_i \in X$ and labels $y_i \in Y$ where $|Y| = k$
     \item Coloring $\mu : Y \rightarrow \{-1,+1\}$
     \item Hypothesis $h: X \rightarrow \{-1,+1\}$ to predict the coloring $\mu$
-    \item Probability distribution on wrong labellings $D : X \times Y \rightarrow [0,1]$ where all correct pairs $(x_i, y_i)$ have 0 probability
+    \item Probability distribution on labellings $D : X \times Y \rightarrow [0,1]$ with the constraint that correctly labelled pairs $(x_i, y_i)$ have 0 probability
     \end{itemize}
     The pseudoloss of the hypothesis $h$ for the coloring $\mu$ on the distribution D is calculated as sum of two things
     \begin{itemize}
     \item If $y_i \in \{y : h(x_i) == \mu(y) \}$, 0, otherwise half the sum of all entries in D for $x_i$
-    \item Half the sum of all entries of D where $\{y : h(x_i) == \mu(y) \}$
+    \item Half the sum of all entries of $D(x_i, y)$ where $y \in \{y : h(x_i) == \mu(y) \}$
     \end{itemize}
-    It essentially sums over all the probabilities of wrong labellings (since the probabilities of right labellings are zero in the above sums)
+    It is essentially a measure of the weight of the distribution on
+    all the misclassifications of h (note that since the probabilities of correct labellings are zero, although we add them in the above expressions, they contribute 0)
 \section{Approaches to Multiclass Learning}
-	At their core most multiclass learning algorithms reduce multiclass learning to binary classification problems. 
+	At their core most multiclass learning algorithms reduce multiclass learning to binary classification problems.
+	
 	Binary encoding:
 	\begin{itemize}
 		\item If we have k output classes, encode each of the k classes into a unique binary string of length n.
-		\item Learn n binary hypothesis from given set of labeled examples such that each n bit string represents a class i
-		\item For a given new instance, find a n bit string C by running the n binary hypothesis. The label is then predicted as i by finding class i whose n bit string has least hamming distance with C. Ties are again arbitrarily.
 		\item The shortest n possible is trivially $\lceil \log k \rceil$ and codes longer than k usually wouldn't make sense
 	\end{itemize}
     \subsection{One per class approach(one vs all)}
-        The one per class approach encodes into a binary string of length $n=k$ where the encoding of the $i^{th}$ class has the $i^{th}$ bit as 1 and all others 0.
-    \subsection{Encoding into binary numbers}
-        Encode each of the k classes into their binary representation. This encodes the classes into $n = \lceil \log k \rceil$ bit strings.
+        The one per class approach encodes into a binary string of length $n=k$ where the encoding of the $i^{th}$ class has the $i^{th}$ bit as +1 and all others -1. Then n binary hypothesis are learnt corresponding to each bit of the code. For a given new instance, all n hypotheses are evaluated and the one that output +1 is the output class. Ties are broken arbitrarily
     \subsection{ECC encoding}
-        Encode each of the k classes into binary strings of length n in such a way that any pair of encodings has at least a minimum hamming distance greater than a certain threshold. One per class can be considered ECC with distance exactly 2 and binary encoding has minimum distance 1.
+        Encode each of the k classes into binary strings of length n in such a way that any pair of encodings has at least a minimum hamming distance greater than a certain threshold. One per class can be considered ECC with distance exactly 2
 
 \section{Using Error Correcting Codes}
     The algorithm for learning multiclass from Error Correcting codes can be given as follows:
@@ -125,7 +123,11 @@
         This follows immediately from the property of error correcting codes. The codes are at least a distance d apart. Therefore, even if the mistaken bits are less then $\lfloor\frac{d-1}{2}\rfloor$ it will be still closer to the correct label's n bit code rather then any other code
     \end{proof}
     
-\section{Comparing Between ECC approach and One Per Class Approach}
+\section{Comparison Between ECC approach and One Per Class Approach}
+The first two lemmas of this section show that the worst case training erorr using ECC is much lower than the worst case error using one per class approach. The next lemma shows that the worst case error of ECC can be twice as high as the best case error of one per class meaning that ECC does not always necessarily outperform one per class. Also, the nature of the hypotheses in ECC is complex and learning them might be inherently more difficult. 
+
+The last lemma of this section proves bounds on the worst case error rate in terms of the bounds of pair-wise error correlations between the hypotheses. What this means is that if we are able to somehow bound the correlations of the errors, we can get good training performance using ECC
+
    \begin{lemma} 
         The worst-case training error of one-per-class can be as high as $min\left\{\sum_{i=1}^k e_i , 1\right\}$; and for randomized one-per-class it can be as high as $min\left\{\frac{k-1}{k}\sum_{i=1}^k e_i,1\right\}$
    \end{lemma}
@@ -160,9 +162,6 @@
         Hence training error of ECC approach using an (n,k,d) code can be no higher than 2n/d times the average error $\frac{1}{n}\sum_{i=1}^n e_i$ of the binary hypotheses.
     \end{proof}
     
-    \begin{lemma} 
-        The worst case training error of an ECC approach using an (n,k,n/2) code, where n is a power of 2, can be as high as 2 times the best error of binary hypotheses.
-    \end{lemma}
     
             \begin{claim}
                 For any codeword x, inverting the last n/2 positions transforms it into another codeword y. Hence, inverting the last n/4+1 positions of x creates a vector closer to y then to x.
@@ -195,19 +194,23 @@
                  \end{align*}
                  As can be seen x,y and z are constructed as explained. Further v is at a distance 3 from x whereas at a distance 1 from y. Thus v is closer to y.\\\\
             \end{proof}
-    \bf Proof of Lemma \normalfont\\
+    \begin{lemma} 
+        The worst case training error of an ECC approach using an (n,k,n/2) code, where n is a power of 2, can be as high as 2 times the best error of binary hypotheses.
+    \end{lemma}
+    \begin{proof}
     The construction of the worst case situation such that it matches the Claims proved above. Therefore if we have n binary hypotheses such that $h_i$ makes error $e_i$, we consider the following two cases:
     \begin{enumerate}
-        \item Suppose the n/4+1 hypothesis : $h_{3n/4},....h_{n}$ all make mistake on a fraction $f_1$ of training examples. From Claim 6, all the examples in $f_1$ would be mislabelled (as nearer to codeword y then to x).
+        \item Suppose the n/4+1 hypothesis : $h_{3n/4},....h_{n}$ all make mistake on a fraction $f_1$ of training examples. From Claim 5, all the examples in $f_1$ would be mislabelled (as nearer to codeword y then to x).
         Since, the last n/4+1 hypothesis are making error, in the worst case where the errors are made on the same examples, $f_1$ would be $min\left\{e_{3n/4},...e_n\right\}$
-        \item Now suppose there is a fraction $f_2$ of examples such that if we invert some subset of n/2+1 positions in it, then by Claim 7 it will be closer to another codeword y and would be misclassified. Here, the first n/2+1 hypothesis are making error, in the worst case where the errors are made on the same examples, $f_2$ would be $min\left\{e_{1},...e_{n/2+1}\right\}$.
+        \item Now suppose there is a fraction $f_2$ of examples such that if we invert some subset of n/2+1 positions in it, then by Claim 6 it will be closer to another codeword y and would be misclassified. Here, the first n/2+1 hypothesis are making error, in the worst case where the errors are made on the same examples, $f_2$ would be $min\left\{e_{1},...e_{n/2+1}\right\}$.
     \end{enumerate}
     Thus total error=
     \begin{align*}
         f_1+f_2 &= min\left\{e_{3n/4},...e_n\right\}+min\left\{e_{1},...e_{n/2+1}\right\}\\
             &\geq 2  min\left\{e_1,...e_n\right\}
     \end{align*}
-    The ECC approach does not suffice when the errors are highly correlated, here one-per-class works better. Therefore next result works on providing an upper bound on error taking error correlation of two hypothesis into consideration\\\\
+    \end{proof}
+    The ECC approach does not suffice when the errors are highly correlated, here one-per-class works better. Therefore next result works on providing an upper bound on error taking error correlation of two hypothesis into consideration
     \begin{lemma} 
         Let $\Delta$ be an upper bound on $Pr_x[h_i(x)$ is wrong and $h_j(x)$ is wrong] for all i,j such that $1 \leq i <j \leq n$. Then the worst-case training error of ECC approach using an (n,k,d) code can be no higher then $4\frac{n(n-1)}{d(d-2)}\Delta$. In particular, for codes with minimum distance d at least n/2+2, this is no more than 16$\Delta$\\
     \end{lemma} 
@@ -227,14 +230,16 @@
 \normalfont
     
 \section{Boosting}
+We maintain a notation where a bar on top of variables mean that these represent some variables in an equivalent problem of \textsc{AdaBoost}
+
 \subsection{\textsc{AdaBoost}.OC}
 Schapire\cite{s-ocbmlp-97} introduces \textsc{AdaBoost}.OC that builds upon \textsc{AdaBoost} boosting algorithm to solve multiclass problems. The \textsc{AdaBoost}.ECC as defined by this paper improves upon \textsc{AdaBoost}.OC. The description of the algorithm is as follows:
 \begin{itemize}
 \item Input sequence of labelled examples $(x_1, y_1), (x_2, y_2), \ldots, (x_m, y_m)$ where the inputs $x_i \in X$ and $y_i \in Y$, $|Y| = k$
 \item Initialize distribution $\bar D_1$
 \begin{itemize}
-\item $D_1(i, l) = \frac{1}{m(k-1)}\quad \forall i \in [m],\quad l \in Y - \{y_i\}$
-\item $D_1(i, l) = 0 \quad \forall i \in [m],\quad l = y_i$
+\item $\bar D_1(i, l) = \frac{1}{m(k-1)}\quad \forall i \in [m],\quad l \in Y - \{y_i\}$
+\item $\bar D_1(i, l) = 0 \quad \forall i \in [m],\quad l = y_i$
 \end{itemize}
 \item For $t =  1 \ldots T$
 \begin{itemize}
@@ -242,7 +247,8 @@ Schapire\cite{s-ocbmlp-97} introduces \textsc{AdaBoost}.OC that builds upon \tex
 \item Calculate $U_t = \sum_{i=1}^m \sum_{l \in Y} \bar D_t(i,l) \llbracket \mu_t(y_i) \neq \mu_t(l)\rrbracket$
 \item Calculate $D_t(i) = \frac{1}{U_t} \sum_{l \in Y} \bar D_t(i,l) \llbracket \mu_t(y_i) \neq \mu_t(l)\rrbracket$
 \item Use weak learner to learn hypothesis $h_t : X \rightarrow \{-1,+1\}$ on the m examples labelled according to coloring $\mu_t$ and distribution $D_t$
-\item Calculate pseudoloss $\epsilon_t$ of hypothesis $h_t$ on distribution $D_t$\\
+\item Calculate $\bar h_t(x) = \{l \in Y : h_t(x) = \mu_t(l)\}$
+\item Calculate pseudoloss $\bar \epsilon_t$ of hypothesis $h_t$ on distribution $D_t$\\
 $\bar \epsilon_t = \frac{1}{2} \sum_{i=1}^m \sum_{l \in Y} (\llbracket y_i \notin \bar h_t(x_i)\rrbracket + \llbracket l \in \bar h_t(x_i) \rrbracket)$
 \item Calculate weight $\alpha_t = \frac{1}{2} \ln \left( \frac{1-\epsilon_t}{\epsilon_t}\right)$
 \item Update $\bar D_{t+1}(i,l) = \frac{1}{\bar Z_t} \bar D_t(i,l) exp \left\{ \alpha_t(\llbracket y_i \notin \bar h_t(x_i)\rrbracket + \llbracket l \in \bar h_t(x_i) \rrbracket)\right\}$. Here $\bar Z_t$ is a normalization factor.
@@ -250,7 +256,7 @@ $\bar \epsilon_t = \frac{1}{2} \sum_{i=1}^m \sum_{l \in Y} (\llbracket y_i \noti
 \item Output final hypothesis $$H(x) = argmax_{l \in Y} \sum_{t=1}^T \alpha_t \llbracket l \in \bar h_t(x) \rrbracket$$
 \end{itemize}
 
-\subsubsection{Choose Coloring Function $\mu_t$}
+\subsubsection{Coloring Function $\mu_t$}
 \textsc{AdaBoost}.OC for multiclass problem basically maps the multiclass problem to binary by using the coloring function $\mu_t$ at each iteration t.  The coloring $\mu_t: Y \to \left\{-1,+1\right\}$ is thus important for good performance of the algorithm. It essentially partitions the k labels into two subsets and labels them as -1 and 1. The same coloring method has also been used in \textsc{AdaBoost}.ECC as presented in this paper. Here we present a very brief approach to evaluate $\mu_t$. As proved by Schapire in Theorem 1 of \cite{s-ocbmlp-97} the training error of final hypothesis is bounded by:
 \begin{align*}
     (k-1) \prod_{t=1}^T \sqrt{1-4(\gamma_t U_t)^2} \leq (k-1)exp\left(-2 \sum_{t=1}^T (\gamma_t U_t)^2\right)
@@ -259,11 +265,11 @@ Therefore, the coloring function should be such that it maximizes $U_t$.
 \begin{align*}
     U_t = \sum_{i=1}^m \sum_{l \in Y} \bar D_t(i,l) \llbracket \mu_t(y_i) \neq \mu_t(l)\rrbracket
 \end{align*}
-There are different methods that can be used to generate the coloring function $\mu_t$ at each iteration. The value can be maximized if the probability of $\mu_t(y_i) \neq \mu_t(l)$ = 1/2 for each label l. To achieve this the value of $\mu_t(l)$ is chosen randomly from {0,1}. Thus the expected value of $U_t$ over all examples and all labels also becomes 1/2. At each level of boosting we thus achieve a distribution with equal positive and negative labels from the last coloring function.
+There are different methods that can be used to generate the coloring function $\mu_t$ at each iteration. The value can be maximized if the probability of $\mu_t(y_i) \neq \mu_t(l)$ = 1/2 for each label l. To achieve this the value of $\mu_t(l)$ is chosen randomly from $\{-1,+1\}$. Thus the expected value of $U_t$ over all examples and all labels also becomes 1/2. At each level of boosting we thus achieve a distribution with equal positive and negative labels from the last coloring function.
 
 \section{$\textsc{AdaBoost}$.ECC}
-The main algorithm, termed \textsc{AdaBoost}.ECC and defined below, somewhat follows the structure of \textsc{AdaBoost}.OC described in the previous section and improves on its performance. The improvements are two fold
-Prediction efficiency wise, the following theorems and lemmas show that the error rate of \textsc{AdaBoost}.ECC is at least as good as \textsc{AdaBoost}.OC
+The main algorithm, termed \textsc{AdaBoost}.ECC and defined below, somewhat follows the structure of \textsc{AdaBoost}.OC described in the previous section and improves on its performance. The improvements are two fold.
+Prediction efficiency wise, the following theorems and lemmas show that the error rate of \textsc{AdaBoost}.ECC is at least as good as \textsc{AdaBoost}.OC.
 The algorithm does not explicitly calculate pseudoloss and works directly with the errors of the binary classifiers and therefore runs much faster in practice(less running time)
 
 A high level description of the algorithm is provided below
@@ -272,19 +278,16 @@ A high level description of the algorithm is provided below
 \item Iterates T times and in iteration
 \begin{itemize}
 \item Splits labels into two sets(coloring) and sets up a binary classification problem to predict which set an example belongs to
-\item Creates a distribution $D$ corresponding to this binary classification problem by adding relevant entries from $\bar D$ for each example and normalizing.
+\item Creates a distribution $D$ corresponding to this binary classification problem by adding relevant entries from $\bar D$ for each example and normalizing
 \item Builds a weak learner for this binary classification problem
-\item Calculates the weights of positive and negative votes. This can be done in different ways - symmetric, with equal weight to both or asymmetric with different weights
-\item Update the $m X k$ distribution by up weighting misclassifications and down weighting correct classifications
+\item Calculates the weights of positive and negative votes. This can be done in different ways - symmetric, with equal weight to both or asymmetric with different weights(more efficient than symmetric)
+\item Update the $m \times k$ distribution $\bar D$ by up weighting misclassifications and down weighting correct classifications
 \end{itemize}
 \item Gives an output hypothesis that is : label with the highest sum of weights from the individual hypotheses of the T iterations
 \end{itemize}
 
-The colorings could just represent one bit of the binary encoding of the labels. In this case in a one vs all encoding, each iteration would be running one iteration of one vs all and in an ECC encoding each iteration would be trying to predict a more complex hypothesis which is a set of labels.
+A full detailed description of the algorithm is provided below
 
-We maintain a notation where a bar on top of variables mean that these represent some variables in an equivalent problem of \textsc{AdaBoost}
-
-A full description of the algorithm is
 \begin{itemize}
 \item Input sequence of labelled examples $(x_1, y_1), (x_2, y_2), \ldots, (x_m, y_m)$ where the inputs $x_i \in X$ and $y_i \in Y$, $|Y| = k$
 \item Initialize distribution $\bar D_1$
@@ -319,12 +322,13 @@ A full description of the algorithm is
 \end{itemize}
 
 Before we prove the theoretical guarantees of this algorithm present in the paper, we introduce a few other results that will be used in their proofs. 
-A generalized analysis of \textsc{AdaBoost} with unspecified weights $\alpha_t$  \cite{Schapire:1999:IBA:337859.337870} gives bounds on errors
+The following theorem on a generalized analysis of \textsc{AdaBoost} with unspecified weights $\alpha_t$ from  \cite{Schapire:1999:IBA:337859.337870} gives bounds on errors
 \begin{theorem}
-If we use \textsc{AdaBoost} with arbitrary $\alpha_t$ instead of $\alpha_t = \frac{1}{2} \ln \frac{1-\epsilon_t}{\epsilon_t}$, the following bounds on the error of the final hypothesis still hold
+If we run \textsc{AdaBoost} with arbitrary $\alpha_t$ (instead of $\alpha_t = \frac{1}{2} \ln \frac{1-\epsilon_t}{\epsilon_t}$), the following bounds on the error of the final hypothesis still hold
 $$\frac{1}{m}|\{i : H(x_i) \neq y_i\}| \le \prod_{t=1}^T Z_t$$
 \end{theorem}
 \begin{proof}
+Note that the $Z_t$ themselves are a function of $\alpha_t$ and therefore the bounds are not independent of the choice of $\alpha_t$. The only claim is that the structural form of the bound in terms of $Z_t$ does not change.
 The proof follows along similar lines as that of the original \textsc{AdaBoost} algorithm. Using the same notation as used in class, if we unravel the update rule for D and write $D_{T+1}$, we get
 \begin{align*}
 D_{T+1}(i) &= \frac{exp(-\sum_t \alpha_t y_i h_t(x_i))}{m\prod_t Z_t}\\
@@ -368,7 +372,7 @@ The proof proceeds by
 Consider a binary learning problem $X \times Y \rightarrow \{-1,+1\}$ with
 \begin{itemize}
 \item All labels $-1$
-\item Uniform distribution on the $k-1$ wrong labels for each example $x_i$. Each example gets a weight $\frac{1}{m(k-1)}$. This is exactly the same as the distribution $\hat D_1$ that we defined in \textsc{AdaBoost}.ECC
+\item Uniform distribution on the $k-1$ wrong labels for each example $x_i$(and 0 on corrct labelling). Each example gets a weight $\frac{1}{m(k-1)}$. This is exactly the same as the distribution $\bar D_1$ that we defined in \textsc{AdaBoost}.ECC
 \end{itemize}
 
 Under this setting, the update rule for $\bar D_t(i,l)$ of the original \textsc{AdaBoost} is exactly the same as the update rule we defined for \textsc{AdaBoost}.ECC on the original problem. By definition, we have the output hypothesis of the \textsc{AdaBoost} learner to
@@ -377,9 +381,9 @@ If we choose all the weights $\bar \alpha_t$ of the \textsc{AdaBoost} algorithm 
 $$\bar H(x_i,l) = sign(\sum_{t=1}^T f_t(x_i, l)) $$
 If $H$ makes a mistake on example $x_i$, then by definition, we should have 
 $$\sum_{t=1}^T g_t(x_i)(\mu_t(H(x_i) - \mu_t(y_i)) \ge 0$$
-Using the result of theorem 1 and combining the above three equations, for any error of H, ($H(x_i) \neq y_i)$) we should have $$\hat H(x_i, H(x_i)) = 1$$
+Using the result of previous theorem and combining the above three equations, for any error of H, ($H(x_i) \neq y_i)$) we should have $$\hat H(x_i, H(x_i)) = 1$$
 \begin{align*}
-Pr_{x_i \sim U}[H(x_i) \neq y_i] &\le  Pr_{x_i \sim U}[\exists l \neq y_i : \bar H(x_i, l) = 1]\\s
+Pr_{x_i \sim U}[H(x_i) \neq y_i] &\le  Pr_{x_i \sim U}[\exists l \neq y_i : \bar H(x_i, l) = 1]\\
 &\le (k-1) Pr_{(x_i, l) \sim \bar D_1} [\bar H(x_i, l) = 1]\\
 &\le (k-1) \prod_{t=1}^T \bar Z_t
 \end{align*}
@@ -389,6 +393,7 @@ Now, converting $\bar Z_t$ to $Z_t$
 &= \sum_i exp(-g_t(x_i)\mu_t(y_i)) \sum_{l: \mu_t(l) \neq \mu_t(y_i)} \bar D_t(i,l) + \sum_i \sum_{l: \mu_t(l) = \mu_t(y_i)} \bar D_t(i,l)\\
 &= U_t \sum_i D_t(i) exp(-g_t(x_i) \mu_t(y_i)) + (1-U_t)
 \end{align*}
+This completes the proof
 \end{proof}
 \begin{theorem}
 Let $\mu_1, \mu_2, \ldots \mu_T$ be any sequence of colorings and let $h_1, h_2, \ldots h_T$ be any sequence of weak hypotheses produced by the weak learner. Let $\epsilon_t = 1/2 - \gamma_t$ be the error of $h_t$ with respect to the relabeled and re weighted data on which it was trained and let $U_t$ be as defined in the algorithm. Then the training error of the final hypothesis $H$ output by the symmetric version of \textsc{AdaBoost}.ECC is bounded by 
@@ -406,7 +411,7 @@ Z_t &= \sum_{i=1}^m D_t(i) exp(-\alpha_t h_t(x_i) \mu_t(y_i))\\
 Replacing the values of $Z_t$ in the result of the previous theorem, we get
 $$Error \le (k-1)\prod_{t=1}^T \left(U_t \sqrt{1-4\gamma_t^2} + 1-U_t\right)$$
 \end{proof}
-Using the result of \ref{lemma10}, on the above equation, we get
+Using the result of Thorem \ref{lemma10}, on the above equation, we get
 $$Error \le (k-1)\prod_{t=1}^T \sqrt{1-4\gamma_t^2 U_t^2} $$ which is the error bound of \textsc{AdaBoost}.OC. Therefore, the symmetic version \textsc{AdaBoost}.ECC is at least as good as \textsc{AdaBoost}.OC
 
 \printbibliography[heading=bibintoc,title={References}]
