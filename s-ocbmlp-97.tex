@@ -358,7 +358,6 @@ b^2-a^2 &= 2U_t(1-U_t)(1-\sqrt{1-4\gamma_t^2})\\
 \end{align*}
 since each term in the product is $\ge 0$
 \end{proof}
-
 Theoretical guarantees on the performance of this algorithm follow from the following two theorems
 \begin{theorem}
 The training error of the hypothesis $H$ under the uniform distribution on training examples is at most $$(k-1)\prod_{i=1}^T \bar Z_t = (k-1)\prod_{i=1}^T (Z_t U_t + 1-U_t)$$ where $$Z_t = \sum_{i=1}^m D_t(i) exp(-g_t(x_i)\mu_t(y_i))$$
